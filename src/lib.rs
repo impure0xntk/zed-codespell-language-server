@@ -20,7 +20,7 @@ const GITHUB_REPO: &str = "impure0xntk/zed-codespell-language-server";
 fn asset_name_for(platform: Os, arch: Architecture) -> Result<(String, String), String> {
     let (os_name, file_ext) = match platform {
         Os::Mac => ("apple-darwin", "tar.gz"),
-        Os::Linux => ("unknown-linux-gnu", "tar.gz"),
+        Os::Linux => ("unknown-linux-musl", "tar.gz"),
         Os::Windows => ("pc-windows-msvc", "zip"),
     };
 
@@ -144,6 +144,7 @@ impl CodespellExtension {
         // 3. Reuse the binary resolved by a previous call.
         if let Some(path) = self.cached_binary.as_deref()
             && Path::new(path).is_file()
+            && self.binary_runs(path)
         {
             return Ok(path.to_owned());
         }
@@ -159,10 +160,18 @@ impl CodespellExtension {
         if zed::current_platform().0 == Os::Windows {
             path.set_extension("exe");
         }
-        if path.is_file() {
+        if path.is_file() && self.binary_runs(path.to_str().unwrap_or(NAME)) {
             Some(path.to_string_lossy().into_owned())
         } else {
             None
+        }
+    }
+
+    fn binary_runs(&self, path: &str) -> bool {
+        let mut command = zed::process::Command::new(path.to_string());
+        match command.output() {
+            Ok(output) => output.status.unwrap_or(-1) == 0,
+            Err(_) => false,
         }
     }
 
@@ -197,11 +206,16 @@ impl CodespellExtension {
         let binary_path = version_dir.join(self.binary_filename());
 
         // Reuse an existing installation of this exact version.
-        if binary_path.is_file() {
+        if binary_path.is_file() && self.binary_runs(binary_path.to_str().unwrap_or(NAME)) {
             let binary_path_str = binary_path.to_str().ok_or("Invalid binary path")?;
             zed::make_file_executable(binary_path_str)?;
             self.cleanup_old_versions(&version_dir)?;
             return Ok(binary_path.to_string_lossy().into_owned());
+        }
+        if binary_path.is_file() {
+            // The cached download exists but cannot execute on this system
+            // (e.g. an ELF interpreter mismatch). Drop it and re-download.
+            let _ = fs::remove_dir_all(&version_dir);
         }
 
         zed::set_language_server_installation_status(
@@ -361,12 +375,12 @@ mod tests {
             (
                 Os::Linux,
                 Architecture::Aarch64,
-                "codespell-lsp-aarch64-unknown-linux-gnu.tar.gz",
+                "codespell-lsp-aarch64-unknown-linux-musl.tar.gz",
             ),
             (
                 Os::Linux,
                 Architecture::X8664,
-                "codespell-lsp-x86_64-unknown-linux-gnu.tar.gz",
+                "codespell-lsp-x86_64-unknown-linux-musl.tar.gz",
             ),
             (
                 Os::Windows,

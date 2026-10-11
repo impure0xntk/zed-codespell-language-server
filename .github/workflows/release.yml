@@ -23,12 +23,12 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact: codespell-lsp-x86_64-unknown-linux-gnu.tar.gz
+            target: x86_64-unknown-linux-musl
+            artifact: codespell-lsp-x86_64-unknown-linux-musl.tar.gz
             pack: tar
           - os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-gnu
-            artifact: codespell-lsp-aarch64-unknown-linux-gnu.tar.gz
+            target: aarch64-unknown-linux-musl
+            artifact: codespell-lsp-aarch64-unknown-linux-musl.tar.gz
             pack: tar
           - os: macos-26-intel
             target: x86_64-apple-darwin
@@ -55,6 +55,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: lsp
+
+      - name: Install musl toolchain (Linux)
+        if: matrix.pack == 'tar' && runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Build adapter
         run: cargo build --release --manifest-path lsp/Cargo.toml --target ${{ matrix.target }}
