@@ -1,0 +1,23 @@
+Zed Codespell Extension
+Copyright 2026 impure0xntk
+
+This product includes software developed as part of this repository,
+licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party notices
+--------------------
+
+The `codespell` project (https://github.com/codespell-project/codespell)
+is the spell checker this extension drives.
+
+- The `codespell` software is licensed under the GNU General Public
+  License, version 2 (GPL-2.0).
+- The `dictionary.txt` and `dictionary_*.txt` data files shipped with
+  codespell are derivative works of English Wikipedia and are released
+  under the Creative Commons Attribution-ShareAlike License 3.0
+  (CC-BY-SA-3.0): https://creativecommons.org/licenses/by-sa/3.0/.
+
+This repository does not redistribute the codespell software or its
+dictionary data. `codespell` is invoked from the user's environment
+(installed via pip, pipx, uvx, or a system package manager, or by setting
+the `codespell.path` LSP setting).

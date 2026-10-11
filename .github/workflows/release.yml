@@ -1,0 +1,79 @@
+name: Release
+
+# Builds the codespell-lsp adapter for every supported platform and
+# attaches the archives to a GitHub release. The extension host downloads
+# these assets when no codespell-lsp binary is configured or on PATH.
+#
+# To publish a new version of the extension itself, push a version tag:
+#   git tag v0.1.0 && git push origin v0.1.0
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: codespell-lsp-x86_64-unknown-linux-gnu.tar.gz
+            pack: tar
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            artifact: codespell-lsp-aarch64-unknown-linux-gnu.tar.gz
+            pack: tar
+          - os: macos-26-intel
+            target: x86_64-apple-darwin
+            artifact: codespell-lsp-x86_64-apple-darwin.tar.gz
+            pack: tar
+          - os: macos-26
+            target: aarch64-apple-darwin
+            artifact: codespell-lsp-aarch64-apple-darwin.tar.gz
+            pack: tar
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: codespell-lsp-x86_64-pc-windows-msvc.zip
+            pack: zip
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            artifact: codespell-lsp-aarch64-pc-windows-msvc.zip
+            pack: zip
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: lsp
+
+      - name: Build adapter
+        run: cargo build --release --manifest-path lsp/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Package (tar.gz)
+        if: matrix.pack == 'tar'
+        shell: bash
+        run: |
+          cd lsp/target/${{ matrix.target }}/release
+          tar -czf "$GITHUB_WORKSPACE/${{ matrix.artifact }}" codespell-lsp
+
+      - name: Package (zip)
+        if: matrix.pack == 'zip'
+        shell: bash
+        run: |
+          cd lsp/target/${{ matrix.target }}/release
+          tar -a -cf "$GITHUB_WORKSPACE/${{ matrix.artifact }}" codespell-lsp.exe
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact }}
