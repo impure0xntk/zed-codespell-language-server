@@ -1,7 +1,7 @@
 id = "codespell"
 name = "Codespell"
 description = "Spell checker for code and text, powered by codespell"
-version = "0.1.0"
+version = "0.1.1"
 schema_version = 1
 authors = ["impure0xntk <impure0xntk@users.noreply.github.com>"]
 repository = "https://github.com/impure0xntk/zed-codespell-language-server"

@@ -2,7 +2,7 @@
 
 [package]
 name = "codespell-lsp"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "Apache-2.0"
 description = "Language server adapter that exposes the codespell spell checker over LSP"
